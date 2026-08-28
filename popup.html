@@ -1,0 +1,871 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>D365 Environment Comparison</title>
+<style>
+/* ── Local fonts (bundled — no external requests) ── */
+@font-face{
+  font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url('fonts/inter-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url('fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'JetBrains Mono';font-style:normal;font-weight:400 600;font-display:swap;
+  src:url('fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'JetBrains Mono';font-style:normal;font-weight:400 600;font-display:swap;
+  src:url('fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body:not(.workspace-module) #moduleProgressPanel,
+body:not(.workspace-module) #modDetailPanel{display:none!important}
+
+/* ── Tokens ── */
+:root{
+  --src:#d97706;        /* amber — source */
+  --src-bg:#fffbeb;
+  --src-border:#fde68a;
+  --src-text:#92400e;
+  --tgt:#0d9488;        /* teal — target */
+  --tgt-bg:#f0fdfa;
+  --tgt-border:#99f6e4;
+  --tgt-text:#134e4a;
+  --ink:#111827;
+  --ink-2:#374151;
+  --ink-3:#6b7280;
+  --ink-4:#9ca3af;
+  --surface:#ffffff;
+  --bg:#f3f4f6;
+  --border:#e5e7eb;
+  --border-strong:#d1d5db;
+  --radius:8px;
+  --radius-sm:5px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 12px rgba(0,0,0,.1),0 2px 4px rgba(0,0,0,.06);
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',Consolas,monospace;
+  --hdr-bg:#111827;
+}
+
+/* ── Base ── */
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  /* Compact popup: fits Chrome's extension popup without scrolling */
+  width:640px;
+  min-height:480px;
+  font-size:13px;
+  line-height:1.5;
+}
+/* Full-page mode: restore the wide layout */
+body.fullpage{width:100%;min-height:100vh;max-width:1440px;margin:0 auto}
+
+/* ── Header ── */
+.hdr{
+  background:var(--hdr-bg);
+  color:#fff;
+  display:grid;
+  grid-template-rows:auto 4px;
+}
+.hdr-inner{
+  padding:13px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.hdr-logo{
+  width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  flex-shrink:0;
+}
+.hdr-logo img{width:24px;height:24px;display:block}
+.hdr-wordmark{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.hdr-title{font-size:14px;font-weight:800;letter-spacing:0;color:#f9fafb;line-height:1.15}
+.hdr-sub{font-size:11.5px;color:#cbd5e1;letter-spacing:0;line-height:1.3;font-weight:500;max-width:420px}
+/* Signature split bar */
+.hdr-bar{display:grid;grid-template-columns:1fr 1fr}
+.hdr-bar-src{background:var(--src);opacity:.85}
+.hdr-bar-tgt{background:var(--tgt);opacity:.85}
+.hdr-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;
+  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);
+  color:#f8fafc;cursor:pointer;white-space:nowrap;font-family:var(--font);
+}
+.hdr-pill:hover{background:rgba(255,255,255,.13)}
+
+/* ── Page / Card ── */
+.page{padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.app-footer{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--ink-3);font-size:11px;padding:2px 0 6px}
+.app-footer strong{color:var(--ink-2);font-weight:700}
+.app-footer-dot{width:3px;height:3px;border-radius:999px;background:var(--border-strong)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-hdr{
+  background:#f9fafb;border-bottom:1px solid var(--border);
+  padding:8px 13px;display:flex;align-items:center;gap:7px;
+  font-weight:600;font-size:12px;color:var(--ink-2);
+}
+.card-body{padding:12px 14px}
+.card-toggle{
+  margin-left:auto;border:1px solid var(--border-strong);background:var(--surface);
+  color:var(--ink-3);border-radius:var(--radius-sm);padding:3px 8px;font-size:11px;
+  font-weight:600;cursor:pointer;font-family:var(--font);
+}
+.card-toggle:hover{background:var(--bg)}
+
+/* ── Icon ── */
+.ico{display:inline-block;width:14px;height:14px;flex-shrink:0;vertical-align:middle}
+.ico svg{display:block;width:100%;height:100%}
+
+/* ── Setup ── */
+.setup-compact{display:flex;flex-direction:column;gap:10px}
+.setup-lede{font-size:11.5px;color:var(--ink-3);line-height:1.5}
+
+/* ── Env pair ── */
+.env-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.env-slot{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.env-slot-hdr{display:flex;align-items:center;gap:5px;padding:6px 9px;font-size:11px;font-weight:700;letter-spacing:.2px}
+.env-slot-hdr.src{background:var(--src-bg);border-bottom:1px solid var(--src-border);color:var(--src-text)}
+.env-slot-hdr.tgt{background:var(--tgt-bg);border-bottom:1px solid var(--tgt-border);color:var(--tgt-text)}
+.env-slot-body{padding:7px 9px}
+.env-sel{
+  width:100%;padding:6px 8px;border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);
+  background:var(--surface);color:var(--ink);outline:none;cursor:pointer;
+}
+.env-sel:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+
+/* ── Mode note ── */
+.note{font-size:11px;border-radius:var(--radius-sm);padding:6px 9px;display:flex;gap:7px;line-height:1.5}
+.note-blue{color:#1e3a5f;background:#eff6ff;border:1px solid #bfdbfe}
+.note-warn{color:#78350f;background:#fffbeb;border:1px solid #fde68a}
+
+/* ── Status boxes ── */
+.st-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbox{
+  border-radius:var(--radius-sm);padding:6px 9px;font-size:11.5px;
+  display:flex;align-items:flex-start;gap:7px;min-height:32px;line-height:1.4;word-break:break-word;
+}
+.s-idle   {background:#f9fafb;border:1px solid var(--border);color:var(--ink-3)}
+.s-ok     {background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+.s-error  {background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
+.s-loading{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.d-idle{background:#d1d5db}.d-ok{background:#22c55e}.d-error{background:#ef4444}
+.d-loading{background:#3b82f6;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Action bar ── */
+.act-bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+/* ── Buttons ── */
+.btn{
+  padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  font-family:var(--font);cursor:pointer;border:none;display:inline-flex;
+  align-items:center;gap:5px;white-space:nowrap;line-height:1;
+  transition:background .15s,box-shadow .15s,transform .1s;
+}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:#1d4ed8;color:#fff}
+.btn-primary:hover:not(:disabled){background:#1e40af;box-shadow:0 2px 8px rgba(29,78,216,.35)}
+.btn-ghost{background:var(--surface);color:var(--ink-2);border:1px solid var(--border-strong)}
+.btn-ghost:hover:not(:disabled){background:var(--bg)}
+.btn-teal{background:#0d9488;color:#fff}
+.btn-teal:hover:not(:disabled){background:#0f766e}
+.btn-green{background:#16a34a;color:#fff}
+.btn-green:hover:not(:disabled){background:#15803d}
+/* Diagnose: normally quiet, surface when needed */
+.btn-diag{
+  background:transparent;color:var(--ink-4);border:1px solid transparent;
+  font-size:11px;padding:4px 8px;border-radius:var(--radius-sm);font-family:var(--font);
+  cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+  transition:color .15s,border-color .15s,background .15s;
+}
+.btn-diag:hover{color:var(--ink-2);border-color:var(--border-strong);background:var(--bg)}
+/* Contextual: shown beside a failed status */
+.btn-diag.prominent{color:#9f1239;border-color:#fecdd3;background:#fff1f2}
+.btn-diag.prominent:hover{background:#ffe4e6;border-color:#fda4af}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-xs{padding:2px 6px;font-size:10.5px}
+.ml-auto{margin-left:auto}
+
+/* ── Spinner ── */
+.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:_spin .7s linear infinite;flex-shrink:0}
+.spin-dk{border-color:rgba(0,0,0,.12);border-top-color:#1d4ed8}
+@keyframes _spin{to{transform:rotate(360deg)}}
+
+/* ── Profile / settings panel ── */
+.settings-panel{margin-top:4px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fafafa}
+.settings-panel summary{list-style:none;cursor:pointer;padding:7px 10px;font-size:12px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.settings-panel summary::-webkit-details-marker{display:none}
+.settings-panel[open] summary{border-bottom:1px solid var(--border);background:var(--bg)}
+.settings-body{padding:10px 11px}
+.settings-note{font-size:11px;color:var(--ink-3);line-height:1.5;margin-bottom:9px}
+
+/* ── Profile form ── */
+.pf-form{display:grid;grid-template-columns:1fr 1.6fr auto;gap:7px;align-items:end}
+.pf-form label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3);display:block;margin-bottom:3px}
+.pf-form input{
+  width:100%;padding:6px 8px;border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.pf-form input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+
+/* ── Profile list ── */
+.pf-list{display:flex;flex-direction:column;gap:3px;margin-top:8px;max-height:160px;overflow-y:auto}
+.pf-empty{text-align:center;padding:12px;color:var(--ink-4);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius-sm)}
+.pf-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);transition:all .12s}
+.pf-item:hover{background:var(--src-bg);border-color:var(--src-border)}
+.pf-meta{flex:1;min-width:0}
+.pf-name{font-weight:600;font-size:12px;color:var(--ink)}
+.pf-url{font-size:10px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
+.pf-actions{display:flex;gap:3px;align-items:center}
+.pf-actions button{padding:2px 7px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);font-size:11px;cursor:pointer;font-family:var(--font)}
+.pf-actions button:hover{background:var(--bg)}
+.pf-edit-btn:hover{border-color:#2563eb;color:#1d4ed8}
+.pf-del-btn:hover{border-color:#ef4444;color:#dc2626;background:#fff1f2}
+
+/* ── Filter card ── */
+.workspace-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.workspace-tab{
+  border:1px solid transparent;background:transparent;color:var(--ink-3);border-radius:var(--radius-sm);
+  padding:7px 10px;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;gap:6px;align-items:center;
+}
+.workspace-tab:hover{background:#f9fafb;color:var(--ink)}
+.workspace-tab.active{background:#111827;color:#fff;border-color:#111827;box-shadow:0 2px 8px rgba(15,23,42,.14)}
+.workspace-tab .tab-hint{font-size:10px;font-weight:600;opacity:.72}
+.workspace-pane-note{font-size:11px;color:var(--ink-3);margin:-3px 0 9px 0;line-height:1.5}
+.filter-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.flbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3)}
+.filter-sel{
+  padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  font-size:12px;font-family:var(--font);background:var(--surface);outline:none;cursor:pointer;min-width:180px;
+}
+.filter-sel:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.company-wrap{display:flex;gap:5px;align-items:center}
+.company-custom{
+  padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  font-size:12px;font-family:var(--mono);background:var(--surface);outline:none;
+  max-width:120px;text-transform:uppercase;
+}
+.company-custom:focus{border-color:#2563eb}
+.row-limit-input{
+  width:96px;padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  font-size:12px;font-family:var(--mono);background:var(--surface);outline:none;
+}
+.row-limit-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+
+/* ── Sampling notice — always visible below module filter ── */
+.sample-notice{
+  font-size:11px;color:#78350f;background:#fffbeb;
+  border:1px solid #fde68a;border-radius:var(--radius-sm);
+  padding:5px 9px;display:flex;gap:6px;align-items:center;margin-top:6px;
+}
+
+/* ── Progress panel ── */
+.progress-panel{
+  display:none;margin-top:9px;border:1px solid #bfdbfe;background:#eff6ff;
+  border-radius:var(--radius-sm);padding:8px 10px;
+}
+.progress-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.progress-label{font-size:12px;font-weight:700;color:#1d4ed8}
+.progress-text{font-size:11px;color:#4b5563;line-height:1.4;margin-bottom:5px}
+.progress-bar{height:7px;background:#dbeafe;border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,#1d4ed8,#0d9488);transition:width .2s ease}
+
+/* ── Module detail panel ── */
+.mod-detail-wrap{margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+.mod-detail-head{background:#f9fafb;border-bottom:1px solid var(--border);padding:8px 13px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.mod-detail-title{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.mod-detail-filters{display:flex;align-items:center;gap:7px;margin-left:auto;flex-wrap:wrap}
+.mod-filter-input{
+  padding:4px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  font-size:11.5px;font-family:var(--font);background:var(--surface);outline:none;min-width:140px;
+}
+.mod-filter-input:focus{border-color:#2563eb}
+.mod-filter-sel{
+  padding:4px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  font-size:11.5px;font-family:var(--font);background:var(--surface);outline:none;
+}
+
+/* ── Metrics row ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+.mc{border-radius:var(--radius-sm);padding:9px 10px;text-align:center}
+.mc-total{background:#f9fafb;border:1px solid var(--border)}
+.mc-onlya{background:var(--src-bg);border:1px solid var(--src-border)}
+.mc-onlyb{background:var(--tgt-bg);border:1px solid var(--tgt-border)}
+.mc-match{background:#fefce8;border:1px solid #fde68a}
+.mv{font-size:20px;font-weight:800;line-height:1.1}
+.mc-total .mv{color:var(--ink-2)}.mc-onlya .mv{color:var(--src-text)}.mc-onlyb .mv{color:var(--tgt-text)}.mc-match .mv{color:#92400e}
+.ml2{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-4);margin-top:3px}
+
+/* ── Module comparison table ── */
+.mod-cmp-wrap{overflow-x:auto}
+.mod-cmp-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.mod-cmp-tbl thead tr{background:#111827;color:#fff}
+.mod-cmp-tbl thead th{padding:7px 9px;text-align:left;white-space:nowrap;font-weight:600;font-size:11.5px;vertical-align:middle}
+.mod-cmp-tbl thead th.th-num{text-align:right;width:32px}
+.mod-cmp-tbl thead th.th-center{text-align:center}
+.mod-cmp-tbl thead th.th-env{min-width:104px;padding:6px 8px;line-height:1.15;border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)}
+.mod-cmp-tbl thead th.th-src{background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);color:var(--src-text);border-top:3px solid var(--src)}
+.mod-cmp-tbl thead th.th-tgt{background:linear-gradient(180deg,#f0fdfa 0%,#ccfbf1 100%);color:var(--tgt-text);border-top:3px solid var(--tgt)}
+.th-kicker{display:block;font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.72}
+.th-title{display:block;margin-top:2px;font-size:12px;font-weight:800;letter-spacing:0;color:inherit}
+.th-hint{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0;text-transform:none;opacity:.68}
+.mod-cmp-tbl tbody tr{border-bottom:1px solid #f3f4f6;transition:background .1s}
+.mod-cmp-tbl tbody tr:last-child{border-bottom:none}
+.mod-cmp-tbl tbody tr:hover{background:#f9fafb}
+.mod-cmp-tbl td{padding:6px 9px;color:var(--ink-2)}
+.mod-cmp-tbl td.td-num{text-align:right;color:var(--ink-4);font-size:11px}
+.mod-cmp-tbl td.td-center{text-align:center}
+.mod-cmp-tbl td.td-mono{font-family:var(--mono);font-size:11px;color:var(--ink);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Generic table ── */
+.tbl-wrap{overflow:auto;max-height:480px;border:1px solid var(--border);border-radius:var(--radius-sm)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{
+  position:sticky;top:0;background:#f9fafb;border-bottom:2px solid var(--border);
+  padding:7px 9px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink-3);white-space:nowrap;z-index:1;
+}
+tbody tr{border-bottom:1px solid #f3f4f6;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f9fafb}
+td{padding:6px 9px;color:var(--ink-2)}
+td.ename{font-family:var(--mono);font-size:11px;color:var(--ink);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700}
+.ch-match{background:#fef9c3;color:#713f12}.ch-onlya{background:var(--src-bg);color:var(--src-text)}.ch-onlyb{background:var(--tgt-bg);color:var(--tgt-text)}
+.ck{color:#22c55e;font-size:13px}.cx{color:#d1d5db;font-size:13px}
+.empty{text-align:center;padding:36px 20px;color:var(--ink-4)}
+.ei{font-size:32px;margin-bottom:7px}.empty p{font-size:12px;line-height:1.6}
+.exp-bar{display:flex;gap:7px;justify-content:flex-end;margin-top:9px}
+
+/* ── Badge ── */
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.bm{background:#dcfce7;color:#15803d}
+.bd{background:#fef3c7;color:#92400e}
+.bu{background:var(--src-bg);color:var(--src-text)}
+.bs{background:var(--tgt-bg);color:var(--tgt-text)}
+
+/* ── Module table row states ── */
+.rm{background:#f0fdf4}.rd{background:#fffbeb}.ru{background:var(--src-bg)}.rs{background:var(--tgt-bg)}
+.mod-row-clickable:hover{background:#eff6ff!important;cursor:pointer}
+
+/* ── Data entity browser ── */
+.entity-browser{margin-top:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;box-shadow:var(--shadow-sm)}
+.entity-browser-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 13px;background:#f9fafb;border-bottom:1px solid var(--border)}
+.entity-browser-title{font-size:12.5px;font-weight:800;color:var(--ink)}
+.entity-browser-count{font-size:11px;color:var(--ink-3)}
+.entity-browser-tools{display:flex;align-items:center;gap:7px;margin-left:auto;flex-wrap:wrap}
+.entity-search{min-width:240px;padding:5px 9px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--surface)}
+.entity-search:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.entity-page-size{padding:5px 8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:12px;background:var(--surface);font-family:var(--font)}
+.entity-browser-wrap{overflow:auto;max-height:520px}
+.entity-browser-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.entity-browser-tbl thead th{position:sticky;top:0;z-index:2;background:#111827;color:#e5e7eb;border-bottom:1px solid #111827;padding:7px 9px;text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.entity-browser-tbl tbody tr{border-bottom:1px solid #eef2f7;cursor:pointer;transition:background .12s,box-shadow .12s}
+.entity-browser-tbl tbody tr:hover{background:#eff6ff}
+.entity-browser-tbl tbody tr.eb-active{background:#eef6ff;box-shadow:inset 4px 0 0 #2563eb}
+.entity-browser-tbl tbody tr.eb-loading{background:#fff7ed;box-shadow:inset 4px 0 0 #d97706}
+.entity-browser-tbl td{padding:7px 9px;color:var(--ink-2);vertical-align:top}
+.entity-browser-tbl .eb-num{width:38px;text-align:right;color:var(--ink-4);font-size:11px}
+.entity-browser-tbl .eb-aot{font-family:var(--mono);font-weight:700;color:var(--ink);max-width:290px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entity-browser-tbl .eb-dmf{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entity-browser-tbl .eb-odata{font-family:var(--mono);font-size:11px;color:#1d4ed8;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entity-browser-tbl .eb-module{font-size:11px;color:var(--ink-3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.env-flags{display:flex;gap:4px;white-space:nowrap}
+.env-flag{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:800;border:1px solid transparent}
+.env-flag.src{background:var(--src-bg);border-color:var(--src-border);color:var(--src-text)}
+.env-flag.tgt{background:var(--tgt-bg);border-color:var(--tgt-border);color:var(--tgt-text)}
+.env-flag.busy{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+.entity-browser-foot{display:flex;align-items:center;gap:8px;padding:8px 13px;background:#f9fafb;border-top:1px solid var(--border);font-size:11.5px;color:var(--ink-3)}
+.entity-pager{margin-left:auto;display:flex;align-items:center;gap:6px}
+.pager-btn{padding:4px 9px;border:1px solid var(--border-strong);background:var(--surface);border-radius:var(--radius-sm);font-size:11.5px;font-family:var(--font);cursor:pointer;color:var(--ink-2)}
+.pager-btn:disabled{opacity:.45;cursor:not-allowed}
+.pager-page{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:12px;right:12px;
+  background:var(--ink);color:#fff;padding:8px 12px;border-radius:var(--radius);
+  font-size:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(6px);
+  transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;
+  max-width:320px;line-height:1.4;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Detail / diff panel ── */
+.detail-panel{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:10px;background:var(--surface)}
+.detail-head{background:#f9fafb;border-bottom:1px solid var(--border);padding:8px 13px;font-weight:700;font-size:12.5px}
+.detail-sub{padding:6px 13px;font-size:11px;color:var(--ink-3);border-bottom:1px solid var(--border);background:var(--surface)}
+.value-cell{max-width:340px;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px}
+.field-diff{background:#fffbeb}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:12px;padding:22px 24px;max-width:500px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;font-size:13px;line-height:1.6}
+.modal h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.modal ol{padding-left:17px;margin-bottom:10px}
+.modal ol li{margin-bottom:5px}
+.modal code{display:block;background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:9px 11px;font-size:11px;font-family:var(--mono);margin:7px 0;cursor:pointer;word-break:break-all;line-height:1.5;color:#0e7490}
+.modal code:hover{background:#eff6ff;border-color:#bfdbfe}
+.modal-close{position:absolute;top:10px;right:12px;background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-3);line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--bg);color:var(--ink)}
+
+/* ── Diag panel ── */
+#diagPanel{display:none;margin-top:9px;background:#111827;border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--mono);font-size:11px;color:#d4d4d4;line-height:1.6;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+
+/* ══ Entity Diff Viewer ══ */
+.edv{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:10px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.edv-loading{border-color:#bfdbfe;background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.edv-loading .edv-head{background:#eff6ff}
+.edv-loading-body{padding:18px 14px;display:grid;gap:12px;align-items:start}
+.edv-loading-status{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#1e40af;font-size:12px;font-weight:700}
+.edv-loading-message{font-size:11.5px;font-weight:500;color:#1d4ed8;line-height:1.4;margin-top:2px}
+.edv-loading-progress{height:8px;border-radius:999px;background:#dbeafe;overflow:hidden;position:relative}
+.edv-loading-progress::before{content:"";position:absolute;inset:0;width:42%;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#0d9488);animation:edvProgress 1.15s ease-in-out infinite}
+.edv-loading-lines{display:grid;gap:7px}
+.edv-loading-line{height:14px;border-radius:999px;background:linear-gradient(90deg,#dbeafe,#f8fafc,#dbeafe);background-size:220% 100%;animation:edvPulse 1.4s ease-in-out infinite}
+.edv-loading-line.short{width:58%}.edv-loading-line.mid{width:76%}
+@keyframes edvProgress{0%{transform:translateX(-105%)}100%{transform:translateX(245%)}}
+@keyframes edvPulse{0%{background-position:0 0}100%{background-position:220% 0}}
+@media (prefers-reduced-motion:reduce){.edv-loading-line,.edv-loading-progress::before{animation:none}}
+.edv-head{background:#f9fafb;border-bottom:1px solid var(--border);padding:9px 13px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.edv-head-title{font-size:12.5px;font-weight:700;color:var(--ink);font-family:var(--mono);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edv-counts{display:flex;gap:6px;flex-wrap:wrap}
+.edv-count-src{color:var(--src-text);background:var(--src-bg);border:1px solid var(--src-border);border-radius:var(--radius-sm);padding:2px 8px;font-size:11px;font-weight:600}
+.edv-count-tgt{color:var(--tgt-text);background:var(--tgt-bg);border:1px solid var(--tgt-border);border-radius:var(--radius-sm);padding:2px 8px;font-size:11px;font-weight:600}
+.edv-key{font-size:11px;color:var(--ink-3);background:var(--bg);border-radius:var(--radius-sm);padding:2px 7px;border:1px solid var(--border)}
+.edv-body{display:flex;min-height:0}
+.edv-sidebar{width:190px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:#fafafa}
+.edv-sidebar-hdr{padding:6px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3);border-bottom:1px solid var(--border);background:var(--bg)}
+.edv-sidebar-list{overflow-y:auto;max-height:560px}
+.edv-rec{padding:7px 10px;cursor:pointer;border-bottom:1px solid #f0f0f0;border-left:3px solid transparent;transition:all .12s;display:flex;flex-direction:column;gap:2px}
+.edv-rec:hover{background:#eff6ff;border-left-color:#93c5fd}
+.edv-rec.active{background:#dbeafe;border-left-color:#1d4ed8}
+.edv-rec-key{font-size:11px;font-weight:600;color:var(--ink);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edv-rec-badge{font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:1px 6px;align-self:flex-start}
+.edv-panel{flex:1;min-width:0;display:flex;flex-direction:column}
+.edv-panel-bar{padding:7px 12px;border-bottom:1px solid var(--border);background:#f9fafb;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.edv-panel-rec{font-size:12px;font-weight:700;color:var(--ink);font-family:var(--mono);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edv-panel-stat{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.edv-difftoggle{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink-2);cursor:pointer;user-select:none;white-space:nowrap;margin-left:auto}
+.edv-difftoggle input{accent-color:#1d4ed8;width:13px;height:13px;cursor:pointer}
+.edv-tbl-wrap{overflow:auto;max-height:420px}
+.edv-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.edv-tbl col.c-field{width:170px}
+.edv-tbl thead th{position:sticky;top:0;z-index:3;padding:7px 11px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border);white-space:nowrap}
+.edv-tbl th.h-field{background:#f9fafb;color:var(--ink-3)}
+.edv-tbl th.h-src{background:var(--src-bg);color:var(--src-text);border-left:2px solid var(--src-border)}
+.edv-tbl th.h-tgt{background:var(--tgt-bg);color:var(--tgt-text);border-left:2px solid var(--tgt-border)}
+.edv-tbl tbody tr{border-bottom:1px solid #f3f4f6;transition:background .1s}
+.edv-tbl tbody tr:hover{background:#f9fafb}
+.edv-tbl tbody tr.r-diff{background:#fffbeb}
+.edv-tbl tbody tr.r-diff:hover{background:#fef9c3}
+.edv-tbl td{padding:6px 11px;vertical-align:top;word-break:break-word;white-space:pre-wrap;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.edv-tbl td.c-field{font-family:var(--font);font-size:11.5px;font-weight:600;color:var(--ink-2);background:#fafafa;white-space:normal;border-right:1px solid var(--border)}
+.edv-tbl td.c-src{border-left:2px solid var(--border)}
+.edv-tbl td.c-tgt{border-left:2px solid var(--border)}
+.edv-tbl td.c-src.changed{background:#fef3c7;color:#78350f;border-left:2px solid var(--src)}
+.edv-tbl td.c-tgt.changed{background:#d1fae5;color:var(--tgt-text);border-left:2px solid var(--tgt)}
+.diff-pill{display:inline-block;background:var(--src);color:#fff;font-size:9px;font-weight:800;padding:1px 4px;border-radius:8px;margin-left:4px;vertical-align:middle;letter-spacing:.3px;text-transform:uppercase}
+.edv-tbl tr.divider-row td{padding:3px 11px;font-size:10px;color:var(--ink-4);background:var(--bg);font-family:var(--font);font-weight:600;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.edv-missing{padding:9px 12px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border)}
+.edv-missing-blk{border-radius:var(--radius-sm);padding:7px 11px;font-size:12px}
+.edv-missing-blk.src{background:#fff1f2;border:1px solid #fecdd3;color:#991b1b}
+.edv-missing-blk.tgt{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.edv-missing-blk strong{display:block;font-size:11px;margin-bottom:4px}
+.edv-missing-blk ul{margin:0;padding-left:17px;line-height:1.8;font-family:var(--mono);font-size:11px}
+
+/* ── Entity diff modal ── */
+.diff-modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,.58);z-index:1100;padding:18px;align-items:center;justify-content:center}
+.diff-modal-bg.show{display:flex}
+.diff-modal{width:min(1180px,calc(100vw - 36px));height:min(820px,calc(100vh - 36px));background:var(--surface);border-radius:var(--radius);box-shadow:0 24px 80px rgba(15,23,42,.36);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.35)}
+.diff-modal-head{height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#111827;color:#fff;border-bottom:3px solid transparent;border-image:linear-gradient(90deg,var(--src),var(--tgt)) 1}
+.diff-modal-title{font-size:12.5px;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.diff-modal-sub{font-size:10.5px;color:#cbd5e1;white-space:nowrap}
+.diff-modal-close{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;border-radius:var(--radius-sm);height:28px;width:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;line-height:1}
+.diff-modal-close:hover{background:rgba(255,255,255,.16)}
+.diff-modal-body{flex:1;min-height:0;overflow:auto;background:#f8fafc;padding:10px}
+.diff-modal-body .edv{margin-top:0;min-width:760px}
+.diff-modal-body .edv-tbl-wrap{max-height:calc(100vh - 210px)}
+.diff-modal-body .edv-sidebar-list{max-height:calc(100vh - 210px)}
+@media(max-width:720px){.diff-modal-bg{padding:8px}.diff-modal{width:calc(100vw - 16px);height:calc(100vh - 16px)}.diff-modal-sub{display:none}.diff-modal-body{padding:7px}.diff-modal-body .edv{min-width:680px}}
+
+/* ── Reduced motion ── */
+@media(prefers-reduced-motion:reduce){
+  .btn,.card,.pf-item,.edv-rec,#toast,.progress-fill,.spin,.spin-dk{transition:none;animation:none}
+}
+
+/* ── Target-only notice ── */
+.tgt-only-notice{
+  display:none;margin-top:6px;border-radius:var(--radius-sm);
+  padding:7px 10px;font-size:11.5px;line-height:1.5;
+  background:var(--tgt-bg);border:1px solid var(--tgt-border);color:var(--tgt-text);
+  align-items:flex-start;gap:8px;
+}
+.tgt-only-notice.show{display:flex}
+.tgt-only-notice-icon{flex-shrink:0;margin-top:1px}
+.tgt-only-notice-body{flex:1;min-width:0}
+.tgt-only-notice-count{font-weight:800;font-size:13px;color:var(--tgt-text)}
+.tgt-only-notice-link{
+  margin-left:6px;font-size:11px;font-weight:600;color:var(--tgt-text);
+  text-decoration:underline;cursor:pointer;background:none;border:none;
+  font-family:var(--font);padding:0;
+}
+.tgt-only-notice-link:hover{opacity:.75}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-logo" aria-hidden="true">
+      <img src="icons/icon32.png" alt=""/>
+    </div>
+    <div class="hdr-wordmark">
+      <div class="hdr-title">D365 Environment Comparison</div>
+      <div class="hdr-sub">Compare data entities across Finance &amp; Operations environments</div>
+    </div>
+    <button id="btnFullPage" class="hdr-pill" title="Open as full-page tab">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h5a.5.5 0 0 1 0 1H2v12h12v-4.5a.5.5 0 0 1 1 0V14.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5z"/><path d="M16 1h-5.5a.5.5 0 0 0 0 1H14.3l-6.65 6.65a.5.5 0 0 0 .7.7L15 2.7V5.5a.5.5 0 0 0 1 0V1z"/></svg>
+      Full Page
+    </button>
+  </div>
+  <div class="hdr-bar">
+    <div class="hdr-bar-src" title="Source"></div>
+    <div class="hdr-bar-tgt" title="Target"></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ══ Card 1: Environments ══ -->
+  <div class="card" id="setupCard">
+    <div class="card-hdr">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5C6 4 5 6 5 8s1 4 3 6.5M8 1.5C10 4 11 6 11 8s-1 4-3 6.5M1.5 8h13"/></svg>
+      Environments
+      <button id="btnToggleSetup" class="card-toggle" type="button" aria-expanded="true">Collapse</button>
+    </div>
+    <div class="card-body" id="setupCardBody">
+      <div class="setup-compact">
+        <!-- Updated copy: accurate constraint is Chrome profile, not "browser window" -->
+        <div class="setup-lede">Select Source and Target environments, then validate access. Both D365 tabs must be open in this same Chrome profile.</div>
+
+        <div class="env-pair">
+          <div class="env-slot">
+            <div class="env-slot-hdr src">
+              <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+              Source
+            </div>
+            <div class="env-slot-body">
+              <select id="pickerA" class="env-sel" aria-label="Select Source environment">
+                <option value="">— Select a saved profile —</option>
+              </select>
+            </div>
+          </div>
+          <div class="env-slot">
+            <div class="env-slot-hdr tgt">
+              <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+              Target
+            </div>
+            <div class="env-slot-body">
+              <select id="pickerB" class="env-sel" aria-label="Select Target environment">
+                <option value="">— Select a saved profile —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="modeNote" class="note note-blue" style="display:none"></div>
+
+        <!-- aria-live: screen readers announce status changes -->
+        <div class="st-row" aria-live="polite" aria-atomic="false">
+          <div id="stA" class="sbox s-idle"><div class="sdot d-idle"></div><span>Source — not connected</span></div>
+          <div id="stB" class="sbox s-idle"><div class="sdot d-idle"></div><span>Target — not connected</span></div>
+        </div>
+
+        <!-- UAT2-only notice: shown after load when Target has entities not in Source -->
+        <div id="tgtOnlyNotice" class="tgt-only-notice" role="status" aria-live="polite">
+          <span class="tgt-only-notice-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+          </span>
+          <span class="tgt-only-notice-body">
+            <span class="tgt-only-notice-count" id="tgtOnlyCount">0</span>
+            <span id="tgtOnlyLabel"> entities exist only in <strong id="tgtOnlyEnvName">Target</strong> — not present in Source.</span>
+            <button class="tgt-only-notice-link" id="tgtOnlyFilterBtn" type="button">View them →</button>
+          </span>
+        </div>
+
+        <div class="act-bar">
+          <button class="btn btn-ghost" id="btnVal">
+            <span id="spinVal" class="spin spin-dk" style="display:none"></span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5 14 14"/></svg>
+            Validate Access
+          </button>
+          <!-- Load is enabled immediately; validation is recommended but not blocking -->
+          <button class="btn btn-primary" id="btnLoad">
+            <span id="spinLoad" class="spin" style="display:none"></span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v9M5 7l3 3 3-3M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            Load entity list
+          </button>
+          <!-- Diagnose: quiet by default, JS promotes it to .prominent after errors -->
+          <button class="btn-diag ml-auto" id="btnDiag" aria-label="Run diagnostics">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+            Diagnose
+          </button>
+        </div>
+
+        <div id="progressPanel" class="progress-panel" aria-live="polite" aria-atomic="true">
+          <div class="progress-top">
+            <div id="progressLabel" class="progress-label">Working…</div>
+            <div id="progressPct" class="progress-text">0%</div>
+          </div>
+          <div id="progressText" class="progress-text">Preparing…</div>
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        </div>
+
+        <div id="diagPanel"></div>
+
+        <!-- Profile settings -->
+        <details class="settings-panel" id="profileSettings">
+          <summary>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42"/></svg>
+            Saved Profiles
+          </summary>
+          <div class="settings-body">
+            <div class="settings-note">Add the base URL of each D365 environment (e.g. <code style="font-family:var(--mono);font-size:10px">https://company.cloudax.dynamics.com</code>). You only need to do this once per environment.</div>
+            <div class="pf-form">
+              <div>
+                <label>Name</label>
+                <input id="pfName" type="text" placeholder="e.g. DEV, UAT, PROD"/>
+              </div>
+              <div>
+                <label>Environment URL</label>
+                <input id="pfUrl" type="url" placeholder="https://company.cloudax.dynamics.com"/>
+              </div>
+              <div style="padding-bottom:1px">
+                <button type="button" class="btn btn-primary" id="btnAddProfile">Add</button>
+              </div>
+            </div>
+            <input id="pfEditId" type="hidden" value=""/>
+            <div id="pfList" class="pf-list">
+              <div class="pf-empty">No profiles saved yet. Add one above.</div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Card 2: Compare Workspace ══ -->
+  <div class="card" id="moduleFiltersCard">
+    <div class="card-hdr">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M4 8h8M6 12h4"/></svg>
+      Compare workspace
+    </div>
+    <div class="card-body">
+      <div class="workspace-tabs" role="tablist" aria-label="Comparison mode">
+        <button id="tabEntities" class="workspace-tab active" type="button" role="tab" aria-selected="true" aria-controls="entityBrowserPanel">Browse entities <span class="tab-hint">one at a time</span></button>
+        <button id="tabModule" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="moduleControls">Compare by module <span class="tab-hint">batch run</span></button>
+      </div>
+      <div id="entityPaneNote" class="workspace-pane-note">Search the loaded entity list, then click one entity to compare records in a popup.</div>
+      <div id="modulePaneNote" class="workspace-pane-note" style="display:none">Choose a module, legal entity, and row scope, then run a batch comparison for all entities in that module.</div>
+
+      <div id="moduleControls" class="filter-row" style="display:none">
+        <span class="flbl">Module</span>
+        <select id="modSel" class="filter-sel">
+          <option value="">All Module Groups — load data to filter</option>
+        </select>
+
+        <span class="flbl">Legal Entity</span>
+        <div class="company-wrap">
+          <select id="company" class="filter-sel" style="min-width:0;width:160px">
+            <option value="">All legal entities</option>
+            <option value="__custom__">Enter custom…</option>
+          </select>
+          <input id="companyCustom" type="text" class="company-custom" placeholder="dataAreaId" style="display:none" aria-label="Custom legal entity ID"/>
+        </div>
+
+        <span class="flbl">Rows checked</span>
+        <input id="rowLimit" type="number" class="row-limit-input" min="0" step="1" value="100" title="Default is 100 rows per entity; set 0 to compare all rows" aria-label="Rows checked per entity; default 100, set 0 to compare all rows"/>
+
+        <button class="btn btn-primary btn-sm" id="btnCompareModule" type="button" title="Compare records for the selected module">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 3v4H9"/><path d="M3 13V9h4"/><path d="M12.2 7A5 5 0 0 0 4 4.2"/><path d="M3.8 9A5 5 0 0 0 12 11.8"/></svg>
+          Compare
+        </button>
+
+        <button class="btn btn-green btn-sm ml-auto" id="btnReport" style="display:none" title="Select a module group first" aria-label="Generate HTML Report" disabled>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="1" width="10" height="14" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
+          Report
+        </button>
+      </div>
+
+      <!-- Sampling notice: always visible once the card is in use (JS also controls .show) -->
+      <div id="sampleNotice" class="sample-notice">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#d97706" stroke-width="1.5" flex-shrink="0" style="flex-shrink:0"><path d="M8 2L1.5 13.5h13L8 2z"/><path d="M8 6.5v3M8 11v.5"/></svg>
+        Rows checked defaults to <strong>100</strong> per entity. Set <strong>0</strong> to compare all rows.
+      </div>
+
+      <div id="entityBrowserPanel" class="entity-browser" style="display:none">
+        <div class="entity-browser-head">
+          <div>
+            <div class="entity-browser-title">Data entities</div>
+            <div id="entityBrowserSummary" class="entity-browser-count">Load Source and Target to browse entities</div>
+          </div>
+          <div class="entity-browser-tools">
+            <input id="entitySearch" class="entity-search" type="search" placeholder="Search AOT, DMF, OData collection, or module…" aria-label="Search data entities"/>
+            <select id="entityStatusFilter" class="entity-page-size" aria-label="Filter by status">
+              <option value="">All statuses</option>
+              <option value="Match">Match (both envs)</option>
+              <option value="Only in Source">Only in Source</option>
+              <option value="Only in Target">Only in Target</option>
+            </select>
+            <select id="entityPageSize" class="entity-page-size" aria-label="Rows per page">
+              <option value="30">30 / page</option>
+              <option value="50">50 / page</option>
+              <option value="100">100 / page</option>
+            </select>
+          </div>
+        </div>
+        <div class="entity-browser-wrap">
+          <table class="entity-browser-tbl">
+            <thead>
+              <tr>
+                <th class="eb-num">#</th>
+                <th>Data entity AOT name</th>
+                <th>Entity name (DMF)</th>
+                <th>Public collection name (OData)</th>
+                <th>App module</th>
+                <th>Environments</th>
+              </tr>
+            </thead>
+            <tbody id="entityBrowserTbody">
+              <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--ink-4)">Load environments to browse data entities</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="entity-browser-foot">
+          <span id="entityBrowserFooter">0 entities</span>
+          <div class="entity-pager">
+            <button id="entityPrevPage" class="pager-btn" type="button">Previous</button>
+            <span id="entityPageLabel" class="pager-page">Page 1 of 1</span>
+            <button id="entityNextPage" class="pager-btn" type="button">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="moduleProgressPanel" class="progress-panel" style="margin-top:9px" aria-live="polite" aria-atomic="true" hidden>
+        <div class="progress-top">
+          <div id="moduleProgressLabel" class="progress-label">Working…</div>
+          <div id="moduleProgressPct" class="progress-text">0%</div>
+        </div>
+        <div id="moduleProgressText" class="progress-text">Preparing…</div>
+        <div class="progress-bar"><div id="moduleProgressFill" class="progress-fill"></div></div>
+      </div>
+
+      <!-- Module entity detail panel -->
+      <div id="modDetailPanel" style="display:none" hidden>
+        <div class="mod-detail-wrap">
+          <div class="mod-detail-head">
+            <span id="modDetailTitle" class="mod-detail-title">Module Comparison Detail</span>
+            <div id="modDetailSummary" style="display:flex;gap:5px;flex-wrap:wrap;font-size:12px"></div>
+            <div class="mod-detail-filters">
+              <select id="modDetailStatusFilter" class="mod-filter-sel">
+                <option value="">All statuses</option>
+                <option value="Match">Match</option>
+                <option value="Diff">Diff</option>
+                <option value="Only in Source">Only in Source</option>
+                <option value="Only in Target">Only in Target</option>
+                <option value="No OData">No OData</option>
+              </select>
+              <input id="modDetailFilter" type="search" class="mod-filter-input" placeholder="Filter entities…"/>
+            </div>
+          </div>
+          <!-- Use CSS classes instead of inline styles on table/th/td -->
+          <div class="mod-cmp-wrap">
+            <table class="mod-cmp-tbl">
+              <thead>
+                <tr>
+                  <th class="th-num">#</th>
+                  <th>AOT name</th>
+                  <th>DMF name</th>
+                  <th>OData collection</th>
+                  <th id="thSrcRows" class="th-center th-env th-src" title="Records checked from Source"><span class="th-kicker">Source</span><span class="th-title">Checked</span><span class="th-hint">records read</span></th>
+                  <th id="thTgtRows" class="th-center th-env th-tgt" title="Records checked from Target"><span class="th-kicker">Target</span><span class="th-title">Checked</span><span class="th-hint">records read</span></th>
+                  <th id="thSrcOnly" class="th-center th-env th-src" title="Source records with no matching Target record"><span class="th-kicker">Source</span><span class="th-title">Unmatched</span><span class="th-hint">missing in target</span></th>
+                  <th id="thTgtOnly" class="th-center th-env th-tgt" title="Target records with no matching Source record"><span class="th-kicker">Target</span><span class="th-title">Unmatched</span><span class="th-hint">missing in source</span></th>
+                  <th>Status</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody id="modDetailTbody">
+                <tr><td colspan="10" class="td-center" style="padding:20px;color:var(--ink-4)">Run a module compare to see results</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="entityDiffPanel" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-footer" aria-label="Developer credit">
+    <span>D365 Environment Comparison</span>
+    <span class="app-footer-dot" aria-hidden="true"></span>
+    <span>Developed by <strong>Hai Nguyen</strong></span>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── Token Help Modal — only shown in proxy/localhost mode ── -->
+<div class="modal-bg" id="tokenModal">
+  <div class="modal">
+    <button class="modal-close" id="modalCloseBtn" aria-label="Close">&#x2715;</button>
+    <h3>How to get your D365 Bearer Token</h3>
+    <ol>
+      <li>Open your D365 environment in a browser tab and log in</li>
+      <li>Press <strong>F12</strong> to open Developer Tools</li>
+      <li>Click the <strong>Console</strong> tab</li>
+      <li>Paste and run this command (click to copy):</li>
+    </ol>
+    <code id="tokenCmd">copy(Object.entries(sessionStorage).filter(([k])=>k.includes('access')||k.includes('token')).map(([k,v])=>{try{var t=JSON.parse(v);return t.secret||t.accessToken||t.access_token||v}catch{return v}}).find(v=>v&&v.length>100)||'No token found - try the Network tab method')</code>
+    <p style="font-size:11px;color:var(--ink-3);margin-top:8px">Click the command above to copy it. After running it in the Console, the token is in your clipboard.</p>
+    <p style="font-size:11px;color:var(--ink-2);margin-top:8px"><strong>Alternative (Network tab):</strong> In DevTools → Network, click any <code style="font-family:var(--mono);font-size:10px">/data/</code> request → Request Headers → <code style="font-family:var(--mono);font-size:10px">Authorization: Bearer …</code> — copy everything after "Bearer ".</p>
+    <div style="margin-top:13px;text-align:right"><button class="btn btn-primary btn-sm" id="modalGotItBtn">Got it</button></div>
+  </div>
+</div>
+
+<!-- ── Entity Difference Modal ── -->
+<div class="diff-modal-bg" id="entityDiffModal" aria-hidden="true">
+  <div class="diff-modal" role="dialog" aria-modal="true" aria-labelledby="entityDiffModalTitle">
+    <div class="diff-modal-head">
+      <div id="entityDiffModalTitle" class="diff-modal-title">Environment record differences</div>
+      <div id="entityDiffModalSub" class="diff-modal-sub">Source vs Target</div>
+      <button id="entityDiffModalClose" class="diff-modal-close" type="button" aria-label="Close difference popup">&times;</button>
+    </div>
+    <div id="entityDiffModalBody" class="diff-modal-body"></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="popup.js"></script>
+</body>
+</html>

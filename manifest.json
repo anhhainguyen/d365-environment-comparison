@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "D365 Environment Comparison",
+  "version": "2.0.0",
+  "short_name": "D365 Env Comparison",
+  "description": "Compare D365 Finance & Operations data entities and records across environments.",
+  "icons": {
+    "16":  "icons/icon16.png",
+    "32":  "icons/icon32.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "D365 Environment Comparison",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "32":  "icons/icon32.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://*.operations.dynamics.com/*",
+    "https://*.cloudax.dynamics.com/*"
+  ],
+  "content_scripts": [{
+    "js": ["content.js"],
+    "matches": [
+      "https://*.operations.dynamics.com/*",
+      "https://*.cloudax.dynamics.com/*"
+    ],
+    "run_at": "document_idle"
+  }]
+}
